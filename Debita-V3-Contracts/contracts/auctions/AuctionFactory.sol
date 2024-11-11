@@ -1,6 +1,6 @@
 pragma solidity ^0.8.0;
 
-import "@contracts/auctions/auction.sol";
+import "@contracts/auctions/Auction.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 interface IAggregator {
