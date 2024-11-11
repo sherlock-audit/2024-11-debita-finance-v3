@@ -1,0 +1,3 @@
+[submodule "DebitaV3Contracts/lib/redstone-oracles-monorepo"]
+	path = DebitaV3Contracts/lib/redstone-oracles-monorepo
+	url = https://github.com/redstone-finance/redstone-oracles-monorepo
