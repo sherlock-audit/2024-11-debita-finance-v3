@@ -16,6 +16,9 @@ We will interact with :
 
 - any ERC20 that follows exactly the standard (eg. 18/6 decimals)
 - Receipt tokens (All the interfaces from "contracts/Non-Fungible-Receipts/..")
+- USDC and USDT
+- Fee-on-transfer tokens will be used only in TaxTokensReceipt contract
+
 ___
 
 ### Q: Are there any limitations on values set by admins (or other roles) in the codebase, including restrictions on array lengths?
