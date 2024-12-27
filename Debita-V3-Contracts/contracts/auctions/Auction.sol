@@ -125,11 +125,17 @@ contract DutchAuction_veNFT is ERC721Holder {
         // get fee address
         address feeAddress = auctionFactory(factory).feeAddress();
         // Transfer liquidation token from the buyer to the owner of the auction
+        uint balanceBefore = IERC20(m_currentAuction.sellingToken).balanceOf(
+            s_ownerOfAuction
+        );
         SafeERC20.safeTransferFrom(
             IERC20(m_currentAuction.sellingToken),
             msg.sender,
             s_ownerOfAuction,
             currentPrice - feeAmount
+        );
+        uint balanceAfter = IERC20(m_currentAuction.sellingToken).balanceOf(
+            s_ownerOfAuction
         );
 
         SafeERC20.safeTransferFrom(
@@ -142,7 +148,7 @@ contract DutchAuction_veNFT is ERC721Holder {
         // If it's a liquidation, handle it properly
         if (m_currentAuction.isLiquidation) {
             debitaLoan(s_ownerOfAuction).handleAuctionSell(
-                currentPrice - feeAmount
+                balanceAfter - balanceBefore
             );
         }
         IERC721 Token = IERC721(s_CurrentAuction.nftAddress);

@@ -87,6 +87,7 @@ contract DebitaV3Loan is Initializable, ReentrancyGuard {
     address public AggregatorContract;
     uint feeLender;
     address feeAddress;
+    uint creationBlock;
 
     struct infoOfOffers {
         address principle; // principle of the accepted offer
@@ -176,6 +177,7 @@ contract DebitaV3Loan is Initializable, ReentrancyGuard {
         feeLender = feeInterestLender;
         AggregatorContract = msg.sender;
         feeAddress = _feeAddress;
+        creationBlock = block.number;
     }
 
     /** 
@@ -185,7 +187,7 @@ contract DebitaV3Loan is Initializable, ReentrancyGuard {
      */
     function payDebt(uint[] memory indexes) public nonReentrant {
         IOwnerships ownershipContract = IOwnerships(s_OwnershipContract);
-
+        require(creationBlock != block.number, "Same block");
         require(
             ownershipContract.ownerOf(loanData.borrowerID) == msg.sender,
             "Not borrower"
@@ -231,11 +233,20 @@ contract DebitaV3Loan is Initializable, ReentrancyGuard {
             );
             // if the lender is the owner of the offer and the offer is perpetual, then add the funds to the offer
             if (lendInfo.perpetual && lendInfo.owner == currentOwnerOfOffer) {
+                // add not claimed interest to the offer
+                uint notClaimedInterest = loanData
+                    ._acceptedOffers[index]
+                    .interestToClaim;
+                loanData._acceptedOffers[index].interestToClaim = 0;
+
                 loanData._acceptedOffers[index].debtClaimed = true;
-                IERC20(offer.principle).approve(address(lendOffer), total);
-                lendOffer.addFunds(total);
+                IERC20(offer.principle).approve(
+                    address(lendOffer),
+                    total + notClaimedInterest
+                );
+                lendOffer.addFunds(total + notClaimedInterest);
             } else {
-                loanData._acceptedOffers[index].interestToClaim =
+                loanData._acceptedOffers[index].interestToClaim +=
                     interest -
                     feeOnInterest;
             }
@@ -568,8 +579,9 @@ contract DebitaV3Loan is Initializable, ReentrancyGuard {
         uint feePerDay = Aggregator(AggregatorContract).feePerDay();
         uint minFEE = Aggregator(AggregatorContract).minFEE();
         uint maxFee = Aggregator(AggregatorContract).maxFEE();
-        uint PorcentageOfFeePaid = ((m_loan.initialDuration * feePerDay) /
-            86400);
+        uint PorcentageOfFeePaid = (((m_loan.initialDuration *
+            feePerDay *
+            1e6) / 86400) / 1e6);
         // adjust fees
 
         if (PorcentageOfFeePaid > maxFee) {
@@ -587,9 +599,6 @@ contract DebitaV3Loan is Initializable, ReentrancyGuard {
             if (!offer.paid) {
                 uint alreadyUsedTime = block.timestamp - m_loan.startedAt;
 
-                uint extendedTime = offer.maxDeadline -
-                    alreadyUsedTime -
-                    block.timestamp;
                 uint interestOfUsedTime = calculateInterestToPay(i);
                 uint interestToPayToDebita = (interestOfUsedTime * feeLender) /
                     10000;
@@ -599,12 +608,14 @@ contract DebitaV3Loan is Initializable, ReentrancyGuard {
                 // if user already paid the max fee, then we dont have to charge them again
                 if (PorcentageOfFeePaid != maxFee) {
                     // calculate difference from fee paid for the initialDuration vs the extra fee they should pay because of the extras days of extending the loan.  MAXFEE shouldnt be higher than extra fee + PorcentageOfFeePaid
-                    uint feeOfMaxDeadline = ((offer.maxDeadline * feePerDay) /
-                        86400);
+                    uint feeOfMaxDeadline = ((((offer.maxDeadline -
+                        m_loan.startedAt) *
+                        feePerDay *
+                        1e6) / 86400) / 1e6);
                     if (feeOfMaxDeadline > maxFee) {
                         feeOfMaxDeadline = maxFee;
-                    } else if (feeOfMaxDeadline < feePerDay) {
-                        feeOfMaxDeadline = feePerDay;
+                    } else if (feeOfMaxDeadline < minFEE) {
+                        feeOfMaxDeadline = minFEE;
                     }
 
                     misingBorrowFee = feeOfMaxDeadline - PorcentageOfFeePaid;

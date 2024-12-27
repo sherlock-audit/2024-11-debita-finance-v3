@@ -115,6 +115,9 @@ contract DLOImplementation is ReentrancyGuard, Initializable {
             amount <= m_lendInformation.availableAmount,
             "Amount exceeds available amount"
         );
+        // has to be at least 0.01% of the available amount
+        uint minAMOUNT = (previousAvailableAmount) / 10000;
+        require(amount >= minAMOUNT, "Amount too low");
         require(amount > 0, "Amount must be greater than 0");
 
         lendInformation.availableAmount -= amount;
@@ -146,6 +149,7 @@ contract DLOImplementation is ReentrancyGuard, Initializable {
         lendInformation.perpetual = false;
         lendInformation.availableAmount = 0;
         require(availableAmount > 0, "No funds to cancel");
+        require(isActive, "Offer is not active");
         isActive = false;
 
         SafeERC20.safeTransfer(
@@ -165,6 +169,8 @@ contract DLOImplementation is ReentrancyGuard, Initializable {
                 IAggregator(aggregatorContract).isSenderALoan(msg.sender),
             "Only owner or loan"
         );
+        require(isActive, "Offer is not active");
+
         SafeERC20.safeTransferFrom(
             IERC20(lendInformation.principle),
             msg.sender,
@@ -180,6 +186,7 @@ contract DLOImplementation is ReentrancyGuard, Initializable {
 
         lendInformation.perpetual = _perpetual;
         if (_perpetual == false && lendInformation.availableAmount == 0) {
+            isActive = false;
             IDLOFactory(factoryContract).emitDelete(address(this));
             IDLOFactory(factoryContract).deleteOrder(address(this));
         } else {

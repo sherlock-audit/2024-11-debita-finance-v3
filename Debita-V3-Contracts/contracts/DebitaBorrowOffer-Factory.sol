@@ -103,7 +103,13 @@ contract DBOFactory {
         require(_ratio.length == _acceptedPrinciples.length, "Invalid ratio");
         require(_collateralAmount > 0, "Invalid started amount");
 
-        DBOImplementation borrowOffer = new DBOImplementation();
+        DBOImplementation borrowOfferProxy = new DebitaProxyContract(
+            implementationContract
+        );
+
+        DBOImplementation borrowOffer = DBOImplementation(
+            address(borrowOfferProxy)
+        );
 
         borrowOffer.initialize(
             aggregatorContract,

@@ -388,7 +388,8 @@ contract DebitaV3Aggregator is ReentrancyGuard {
             memory offers = new DebitaV3Loan.infoOfOffers[](lendOrders.length);
 
         // percentage
-        uint percentage = ((borrowInfo.duration * feePerDay) / 86400);
+        uint percentage = (((borrowInfo.duration * feePerDay * 1e6) / 86400) /
+            1e6);
         uint[] memory feePerPrinciple = new uint[](principles.length);
 
         // init DLOFACTORY
@@ -466,6 +467,7 @@ contract DebitaV3Aggregator is ReentrancyGuard {
             // calculate the amount of collateral used by the lender
             uint userUsedCollateral = (lendAmountPerOrder[i] *
                 (10 ** decimalsCollateral)) / ratio;
+            require(userUsedCollateral > 0, "userUsedCollateral is zero")
 
             // get updated weight average from the last weight average
             uint updatedLastWeightAverage = (weightedAverageRatio[
@@ -475,7 +477,7 @@ contract DebitaV3Aggregator is ReentrancyGuard {
 
             // same with apr
             uint updatedLastApr = (weightedAverageAPR[principleIndex] *
-                amountPerPrinciple[principleIndex]) /
+                amountPerPrinciple[principleIndex] * 1e6) /
                 (amountPerPrinciple[principleIndex] + lendAmountPerOrder[i]);
 
             // add the amounts to the total amounts
@@ -487,7 +489,7 @@ contract DebitaV3Aggregator is ReentrancyGuard {
             uint newWeightedAverage = (ratio * userUsedCollateral) /
                 (m_amountCollateralPerPrinciple + userUsedCollateral);
 
-            uint newWeightedAPR = (lendInfo.apr * lendAmountPerOrder[i]) /
+            uint newWeightedAPR = (lendInfo.apr * lendAmountPerOrder[i] * 1e6) /
                 amountPerPrinciple[principleIndex];
 
             // calculate the weight of the new amounts, add them to the weighted and accept offers
@@ -495,8 +497,8 @@ contract DebitaV3Aggregator is ReentrancyGuard {
                 newWeightedAverage +
                 updatedLastWeightAverage;
             weightedAverageAPR[principleIndex] =
-                newWeightedAPR +
-                updatedLastApr;
+               ( newWeightedAPR +
+                updatedLastApr ) / 1e6;
 
             // mint ownership for the lender
             uint lendID = IOwnerships(s_OwnershipContract).mint(lendInfo.owner);
