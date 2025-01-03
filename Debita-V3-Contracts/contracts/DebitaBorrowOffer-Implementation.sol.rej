@@ -1,0 +1,19 @@
+diff a/Debita-V3-Contracts/contracts/DebitaBorrowOffer-Implementation.sol b/Debita-V3-Contracts/contracts/DebitaBorrowOffer-Implementation.sol	(rejected hunks)
+@@ -142,6 +142,7 @@ contract DBOImplementation is ReentrancyGuard, Initializable {
+             amount <= m_borrowInformation.availableAmount,
+             "Amount exceeds available amount"
+         );
++
+         require(amount > 0, "Amount must be greater than 0");
+ 
+         borrowInformation.availableAmount -= amount;
+@@ -154,6 +155,9 @@ contract DBOImplementation is ReentrancyGuard, Initializable {
+                 m_borrowInformation.receiptID
+             );
+         } else {
++            // has to be at least 0.01% of the available amount
++            uint minAMOUNT = (m_borrowInformation.availableAmount) / 10000;
++            require(amount >= minAMOUNT, "Amount too low");
+             SafeERC20.safeTransfer(
+                 IERC20(m_borrowInformation.collateral),
+                 aggregatorContract,

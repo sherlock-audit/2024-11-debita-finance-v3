@@ -1,0 +1,12 @@
+diff a/Debita-V3-Contracts/contracts/oracles/MixOracle/TarotOracle/interfaces/IUniswapV2Pair.sol b/Debita-V3-Contracts/contracts/oracles/MixOracle/TarotOracle/interfaces/IUniswapV2Pair.sol	(rejected hunks)
+@@ -45,6 +45,10 @@ interface IUniswapV2Pair {
+             uint112 reserve1,
+             uint32 _blockTimestampLast
+         );
++    function current(
++        address tokenIn,
++        uint amountIn
++    ) external view returns (uint amountOut);
+ 
+     function reserve0CumulativeLast() external view returns (uint256);
+ 

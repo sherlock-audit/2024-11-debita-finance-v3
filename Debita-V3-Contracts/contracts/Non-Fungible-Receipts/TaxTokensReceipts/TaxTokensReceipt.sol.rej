@@ -1,0 +1,31 @@
+diff a/Debita-V3-Contracts/contracts/Non-Fungible-Receipts/TaxTokensReceipts/TaxTokensReceipt.sol b/Debita-V3-Contracts/contracts/Non-Fungible-Receipts/TaxTokensReceipts/TaxTokensReceipt.sol	(rejected hunks)
+@@ -18,6 +18,11 @@ interface ILendOrderFactory {
+ 
+ interface IAggregator {
+     function isSenderALoan(address _aggregator) external view returns (bool);
++    function s_AuctionFactory() external view returns (address);
++}
++
++interface AuctionFactory {
++    function AuctionOrderIndex(address _auction) external view returns (uint);
+ }
+ 
+ contract TaxTokensReceipts is ERC721Enumerable, ReentrancyGuard {
+@@ -103,9 +108,15 @@ contract TaxTokensReceipts is ERC721Enumerable, ReentrancyGuard {
+             .isBorrowOrderLegit(from) ||
+             ILendOrderFactory(lendOrderFactory).isLendOrderLegit(from) ||
+             IAggregator(Aggregator).isSenderALoan(from);
+-        // Debita not involved --> revert
++
++        address owner = ownerOf(tokenId);
++        address auctionFactory = IAggregator(Aggregator).s_AuctionFactory();
++        bool isNftInAnAuction = AuctionFactory(auctionFactory)
++            .AuctionOrderIndex(owner) != 0;
+         require(
+-            isReceiverAddressDebita || isSenderAddressDebita,
++            isReceiverAddressDebita ||
++                isSenderAddressDebita ||
++                isNftInAnAuction,
+             "TaxTokensReceipts: Debita not involved"
+         );
+         if (to == address(0)) {
