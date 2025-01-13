@@ -8,6 +8,8 @@ import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import "@contracts/DebitaProxyContract.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
+import "@openzeppelin/contracts/utils/math/Math.sol";
+
 interface DLOFactory {
     function isLendOrderLegit(address _lendOrder) external view returns (bool);
 }
@@ -559,7 +561,8 @@ contract DebitaV3Aggregator is ReentrancyGuard {
                 feeToConnector
             );
             // check if the apr is within the limits of the borrower
-            require(weightedAverageAPR[i] <= borrowInfo.maxApr, "Invalid APR");
+            uint maxAPR = borrowInfo.maxApr + lendOrders.length;
+            require(weightedAverageAPR[i] <= maxAPR, "Invalid APR");
         }
         // if collateral is an NFT, check if the amount of collateral is within the limits
         // it has a 2% margin to make easier the matching, amountOfCollateral is the amount of collateral "consumed" and the valuableAssetAmount is the underlying amount of the NFT

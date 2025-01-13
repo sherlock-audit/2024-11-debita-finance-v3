@@ -7,13 +7,19 @@ diff a/Debita-V3-Contracts/contracts/DebitaBorrowOffer-Implementation.sol b/Debi
          require(amount > 0, "Amount must be greater than 0");
  
          borrowInformation.availableAmount -= amount;
-@@ -154,6 +155,9 @@ contract DBOImplementation is ReentrancyGuard, Initializable {
+@@ -154,6 +155,15 @@ contract DBOImplementation is ReentrancyGuard, Initializable {
                  m_borrowInformation.receiptID
              );
          } else {
-+            // has to be at least 0.01% of the available amount
-+            uint minAMOUNT = (m_borrowInformation.availableAmount) / 10000;
-+            require(amount >= minAMOUNT, "Amount too low");
++            // has to be at least 5% of the available amount
++            uint minAMOUNT = (m_borrowInformation.availableAmount) / 20;
++            uint decimals = ERC20(m_borrowInformation.collateral).decimals();
++            uint thousandTokens = 1000 * 10 ** decimals;
++            require(
++                amount >= minAMOUNT || amount >= thousandTokens,
++                "Amount too low"
++            );
++            // get decimals
              SafeERC20.safeTransfer(
                  IERC20(m_borrowInformation.collateral),
                  aggregatorContract,

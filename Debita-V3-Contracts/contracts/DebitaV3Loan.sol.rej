@@ -1,5 +1,5 @@
 diff a/Debita-V3-Contracts/contracts/DebitaV3Loan.sol b/Debita-V3-Contracts/contracts/DebitaV3Loan.sol	(rejected hunks)
-@@ -87,6 +87,7 @@ contract DebitaV3Loan is Initializable, ReentrancyGuard {
+@@ -87,6 +88,7 @@ contract DebitaV3Loan is Initializable, ReentrancyGuard {
      address public AggregatorContract;
      uint feeLender;
      address feeAddress;
@@ -7,7 +7,7 @@ diff a/Debita-V3-Contracts/contracts/DebitaV3Loan.sol b/Debita-V3-Contracts/cont
  
      struct infoOfOffers {
          address principle; // principle of the accepted offer
-@@ -176,6 +177,7 @@ contract DebitaV3Loan is Initializable, ReentrancyGuard {
+@@ -176,6 +178,7 @@ contract DebitaV3Loan is Initializable, ReentrancyGuard {
          feeLender = feeInterestLender;
          AggregatorContract = msg.sender;
          feeAddress = _feeAddress;
@@ -15,7 +15,7 @@ diff a/Debita-V3-Contracts/contracts/DebitaV3Loan.sol b/Debita-V3-Contracts/cont
      }
  
      /** 
-@@ -185,7 +187,7 @@ contract DebitaV3Loan is Initializable, ReentrancyGuard {
+@@ -185,7 +188,7 @@ contract DebitaV3Loan is Initializable, ReentrancyGuard {
       */
      function payDebt(uint[] memory indexes) public nonReentrant {
          IOwnerships ownershipContract = IOwnerships(s_OwnershipContract);
@@ -24,7 +24,7 @@ diff a/Debita-V3-Contracts/contracts/DebitaV3Loan.sol b/Debita-V3-Contracts/cont
          require(
              ownershipContract.ownerOf(loanData.borrowerID) == msg.sender,
              "Not borrower"
-@@ -231,11 +233,20 @@ contract DebitaV3Loan is Initializable, ReentrancyGuard {
+@@ -231,11 +234,20 @@ contract DebitaV3Loan is Initializable, ReentrancyGuard {
              );
              // if the lender is the owner of the offer and the offer is perpetual, then add the funds to the offer
              if (lendInfo.perpetual && lendInfo.owner == currentOwnerOfOffer) {
@@ -48,19 +48,20 @@ diff a/Debita-V3-Contracts/contracts/DebitaV3Loan.sol b/Debita-V3-Contracts/cont
                      interest -
                      feeOnInterest;
              }
-@@ -568,8 +579,9 @@ contract DebitaV3Loan is Initializable, ReentrancyGuard {
+@@ -568,8 +580,10 @@ contract DebitaV3Loan is Initializable, ReentrancyGuard {
          uint feePerDay = Aggregator(AggregatorContract).feePerDay();
          uint minFEE = Aggregator(AggregatorContract).minFEE();
          uint maxFee = Aggregator(AggregatorContract).maxFEE();
 -        uint PorcentageOfFeePaid = ((m_loan.initialDuration * feePerDay) /
 -            86400);
-+        uint PorcentageOfFeePaid = (((m_loan.initialDuration *
-+            feePerDay *
-+            1e6) / 86400) / 1e6);
++        uint PorcentageOfFeePaid = Math.ceilDiv(
++            (m_loan.initialDuration),
++            86400
++        ) * feePerDay;
          // adjust fees
  
          if (PorcentageOfFeePaid > maxFee) {
-@@ -587,9 +599,6 @@ contract DebitaV3Loan is Initializable, ReentrancyGuard {
+@@ -587,9 +601,6 @@ contract DebitaV3Loan is Initializable, ReentrancyGuard {
              if (!offer.paid) {
                  uint alreadyUsedTime = block.timestamp - m_loan.startedAt;
  
@@ -70,16 +71,16 @@ diff a/Debita-V3-Contracts/contracts/DebitaV3Loan.sol b/Debita-V3-Contracts/cont
                  uint interestOfUsedTime = calculateInterestToPay(i);
                  uint interestToPayToDebita = (interestOfUsedTime * feeLender) /
                      10000;
-@@ -599,12 +608,14 @@ contract DebitaV3Loan is Initializable, ReentrancyGuard {
+@@ -599,12 +610,14 @@ contract DebitaV3Loan is Initializable, ReentrancyGuard {
                  // if user already paid the max fee, then we dont have to charge them again
                  if (PorcentageOfFeePaid != maxFee) {
                      // calculate difference from fee paid for the initialDuration vs the extra fee they should pay because of the extras days of extending the loan.  MAXFEE shouldnt be higher than extra fee + PorcentageOfFeePaid
 -                    uint feeOfMaxDeadline = ((offer.maxDeadline * feePerDay) /
 -                        86400);
-+                    uint feeOfMaxDeadline = ((((offer.maxDeadline -
-+                        m_loan.startedAt) *
-+                        feePerDay *
-+                        1e6) / 86400) / 1e6);
++                    uint feeOfMaxDeadline = Math.ceilDiv(
++                        ((offer.maxDeadline - m_loan.startedAt)),
++                        86400
++                    ) * feePerDay;
                      if (feeOfMaxDeadline > maxFee) {
                          feeOfMaxDeadline = maxFee;
 -                    } else if (feeOfMaxDeadline < feePerDay) {
