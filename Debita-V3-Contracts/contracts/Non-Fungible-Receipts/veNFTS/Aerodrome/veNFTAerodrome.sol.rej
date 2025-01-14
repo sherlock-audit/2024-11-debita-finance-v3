@@ -1,0 +1,16 @@
+diff a/Debita-V3-Contracts/contracts/Non-Fungible-Receipts/veNFTS/Aerodrome/veNFTAerodrome.sol b/Debita-V3-Contracts/contracts/Non-Fungible-Receipts/veNFTS/Aerodrome/veNFTAerodrome.sol	(rejected hunks)
+@@ -11,6 +11,14 @@ interface IVotingEscrow {
+         uint256 end;
+         bool isPermanent;
+     }
++
++    enum EscrowType {
++        NORMAL,
++        LOCKED,
++        MANAGED
++    }
++
++    function escrowType(uint id) external view returns (EscrowType);
+ }
+ 
+ interface veNFT is IVotingEscrow {

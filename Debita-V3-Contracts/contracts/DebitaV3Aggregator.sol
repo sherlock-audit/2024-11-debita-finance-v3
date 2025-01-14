@@ -382,7 +382,8 @@ contract DebitaV3Aggregator is ReentrancyGuard {
         uint[] memory amountPerPrinciple = new uint[](principles.length);
 
         // weighted APR for each principle
-        uint[] memory weightedAverageAPR = new uint[](principles.length);
+
+        uint[] memory finalWeightedAverageApr = new uint[](principles.length);
 
         // Info of each accepted offer
         address[] memory lenders = new address[](lendOrders.length);

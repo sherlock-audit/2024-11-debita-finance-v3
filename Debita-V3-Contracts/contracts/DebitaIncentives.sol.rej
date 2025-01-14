@@ -1,0 +1,39 @@
+diff a/Debita-V3-Contracts/contracts/DebitaIncentives.sol b/Debita-V3-Contracts/contracts/DebitaIncentives.sol	(rejected hunks)
+@@ -158,7 +158,7 @@ contract DebitaIncentives {
+             uint porcentageLent;
+ 
+             if (lentAmount > 0) {
+-                porcentageLent = (lentAmount * 10000) / totalLentAmount;
++                porcentageLent = (lentAmount * 1e18) / totalLentAmount;
+             }
+ 
+             uint borrowAmount = borrowAmountPerEpoch[msg.sender][
+@@ -172,7 +172,7 @@ contract DebitaIncentives {
+                 "No borrowed or lent amount"
+             );
+ 
+-            porcentageBorrow = (borrowAmount * 10000) / totalBorrowAmount;
++            porcentageBorrow = (borrowAmount * 1e18) / totalBorrowAmount;
+ 
+             for (uint j = 0; j < tokensIncentives[i].length; j++) {
+                 address token = tokensIncentives[i][j];
+@@ -197,8 +197,8 @@ contract DebitaIncentives {
+                     hashVariablesT(principle, epoch, token)
+                 ] = true;
+ 
+-                uint amountToClaim = (lentIncentive * porcentageLent) / 10000;
+-                amountToClaim += (borrowIncentive * porcentageBorrow) / 10000;
++                uint amountToClaim = (lentIncentive * porcentageLent) / 1e18;
++                amountToClaim += (borrowIncentive * porcentageBorrow) / 1e18;
+ 
+                 IERC20(token).transfer(msg.sender, amountToClaim);
+ 
+@@ -314,7 +314,7 @@ contract DebitaIncentives {
+                 collateral
+             ];
+             if (!validPair) {
+-                return;
++                continue;
+             }
+             address principle = informationOffers[i].principle;
+ 

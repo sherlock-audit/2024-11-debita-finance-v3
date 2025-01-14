@@ -1,0 +1,28 @@
+diff a/Debita-V3-Contracts/contracts/Non-Fungible-Receipts/veNFTS/Aerodrome/Receipt-veNFT.sol b/Debita-V3-Contracts/contracts/Non-Fungible-Receipts/veNFTS/Aerodrome/Receipt-veNFT.sol	(rejected hunks)
+@@ -68,6 +68,13 @@ contract veNFTAerodrome is ReentrancyGuard, ERC721Enumerable {
+         for (uint i; i < nftsID.length; i++) {
+             m_Receipt++;
+ 
++            // Check if veNFT is normal
++            require(
++                IVotingEscrow(nftAddress).escrowType(nftsID[i]) ==
++                    IVotingEscrow.EscrowType.NORMAL,
++                "Not normal escrow"
++            );
++
+             // Create Vault for each deposit
+             veNFTVault vault = new veNFTVault(
+                 nftAddress,
+@@ -249,7 +256,11 @@ contract veNFTAerodrome is ReentrancyGuard, ERC721Enumerable {
+         IVotingEscrow.LockedBalance memory _locked = veContract.locked(nftID);
+         uint _decimals = ERC20(_underlying).decimals();
+         address manager = vaultContract.managerAddress();
+-        address currentOwnerOfReceipt = ownerOf(receiptID);
++        address currentOwnerOfReceipt;
++
++        try veNFT(address(this)).ownerOf(receiptID) returns (address owner) {
++            currentOwnerOfReceipt = owner;
++        } catch {}
+         receiptInstance memory receiptData = receiptInstance({
+             receiptID: receiptID,
+             attachedNFT: nftID,
