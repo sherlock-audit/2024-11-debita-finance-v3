@@ -18,6 +18,12 @@ interface ILendOrderFactory {
 
 interface IAggregator {
     function isSenderALoan(address _aggregator) external view returns (bool);
+    function s_AuctionFactory() external view returns (address);
+}
+
+interface AuctionFactory {
+    function AuctionOrderIndex(address _auction) external view returns (uint);
+    function isAuction(address _auction) external view returns (bool);
 }
 
 contract TaxTokensReceipts is ERC721Enumerable, ReentrancyGuard {
@@ -103,9 +109,14 @@ contract TaxTokensReceipts is ERC721Enumerable, ReentrancyGuard {
             .isBorrowOrderLegit(from) ||
             ILendOrderFactory(lendOrderFactory).isLendOrderLegit(from) ||
             IAggregator(Aggregator).isSenderALoan(from);
-        // Debita not involved --> revert
+
+        address owner = ownerOf(tokenId);
+        address auctionFactory = IAggregator(Aggregator).s_AuctionFactory();
+        bool isNftInAnAuction = AuctionFactory(auctionFactory).isAuction(owner);
         require(
-            isReceiverAddressDebita || isSenderAddressDebita,
+            isReceiverAddressDebita ||
+                isSenderAddressDebita ||
+                isNftInAnAuction,
             "TaxTokensReceipts: Debita not involved"
         );
         if (to == address(0)) {

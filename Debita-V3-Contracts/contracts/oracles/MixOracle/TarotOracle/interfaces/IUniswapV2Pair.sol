@@ -45,6 +45,10 @@ interface IUniswapV2Pair {
             uint112 reserve1,
             uint32 _blockTimestampLast
         );
+    function current(
+        address tokenIn,
+        uint amountIn
+    ) external view returns (uint amountOut);
 
     function reserve0CumulativeLast() external view returns (uint256);
 

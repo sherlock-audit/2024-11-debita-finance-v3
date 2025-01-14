@@ -1,6 +1,6 @@
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
@@ -142,8 +142,8 @@ contract DBOImplementation is ReentrancyGuard, Initializable {
             amount <= m_borrowInformation.availableAmount,
             "Amount exceeds available amount"
         );
-        require(amount > 0, "Amount must be greater than 0");
 
+        require(amount > 0, "Amount must be greater than 0");
         borrowInformation.availableAmount -= amount;
 
         // transfer collateral to aggregator
@@ -154,6 +154,15 @@ contract DBOImplementation is ReentrancyGuard, Initializable {
                 m_borrowInformation.receiptID
             );
         } else {
+            // has to be at least 5% of the available amount
+            uint minAMOUNT = (m_borrowInformation.availableAmount) / 20;
+            uint decimals = ERC20(m_borrowInformation.collateral).decimals();
+            uint thousandTokens = 1000 * 10 ** decimals;
+            require(
+                amount >= minAMOUNT || amount >= thousandTokens,
+                "Amount too low"
+            );
+            // get decimals
             SafeERC20.safeTransfer(
                 IERC20(m_borrowInformation.collateral),
                 aggregatorContract,

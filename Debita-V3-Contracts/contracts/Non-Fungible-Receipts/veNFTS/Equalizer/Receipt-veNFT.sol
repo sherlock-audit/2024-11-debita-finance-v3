@@ -245,7 +245,11 @@ contract veNFTEqualizer is ReentrancyGuard, ERC721Enumerable {
         IVotingEscrow.LockedBalance memory _locked = veContract.locked(nftID);
         uint _decimals = ERC20(_underlying).decimals();
         address manager = vaultContract.managerAddress();
-        address currentOwnerOfReceipt = ownerOf(receiptID);
+        address currentOwnerOfReceipt;
+
+        try veNFT(address(this)).ownerOf(receiptID) returns (address owner) {
+            currentOwnerOfReceipt = owner;
+        } catch {}
         receiptInstance memory receiptData = receiptInstance({
             receiptID: receiptID,
             attachedNFT: nftID,
