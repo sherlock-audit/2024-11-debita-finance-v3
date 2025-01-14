@@ -8,6 +8,8 @@ import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import "@contracts/DebitaProxyContract.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
+import "@openzeppelin/contracts/utils/math/Math.sol";
+
 interface DLOFactory {
     function isLendOrderLegit(address _lendOrder) external view returns (bool);
 }
@@ -388,7 +390,8 @@ contract DebitaV3Aggregator is ReentrancyGuard {
             memory offers = new DebitaV3Loan.infoOfOffers[](lendOrders.length);
 
         // percentage
-        uint percentage = ((borrowInfo.duration * feePerDay) / 86400);
+        uint percentage = Math.ceilDiv((borrowInfo.duration), 86400) *
+            feePerDay;
         uint[] memory feePerPrinciple = new uint[](principles.length);
 
         // init DLOFACTORY
@@ -466,6 +469,7 @@ contract DebitaV3Aggregator is ReentrancyGuard {
             // calculate the amount of collateral used by the lender
             uint userUsedCollateral = (lendAmountPerOrder[i] *
                 (10 ** decimalsCollateral)) / ratio;
+            require(userUsedCollateral > 0, "userUsedCollateral is zero");
 
             // get updated weight average from the last weight average
             uint updatedLastWeightAverage = (weightedAverageRatio[
@@ -474,9 +478,11 @@ contract DebitaV3Aggregator is ReentrancyGuard {
                 (m_amountCollateralPerPrinciple + userUsedCollateral);
 
             // same with apr
-            uint updatedLastApr = (weightedAverageAPR[principleIndex] *
-                amountPerPrinciple[principleIndex]) /
-                (amountPerPrinciple[principleIndex] + lendAmountPerOrder[i]);
+            uint updatedLastApr = Math.ceilDiv(
+                (weightedAverageAPR[principleIndex] *
+                    amountPerPrinciple[principleIndex]),
+                (amountPerPrinciple[principleIndex] + lendAmountPerOrder[i])
+            );
 
             // add the amounts to the total amounts
             amountPerPrinciple[principleIndex] += lendAmountPerOrder[i];
@@ -487,16 +493,17 @@ contract DebitaV3Aggregator is ReentrancyGuard {
             uint newWeightedAverage = (ratio * userUsedCollateral) /
                 (m_amountCollateralPerPrinciple + userUsedCollateral);
 
-            uint newWeightedAPR = (lendInfo.apr * lendAmountPerOrder[i]) /
-                amountPerPrinciple[principleIndex];
+            uint newWeightedAPR = Math.ceilDiv(
+                (lendInfo.apr * lendAmountPerOrder[i]),
+                amountPerPrinciple[principleIndex]
+            );
 
             // calculate the weight of the new amounts, add them to the weighted and accept offers
             weightedAverageRatio[principleIndex] =
                 newWeightedAverage +
                 updatedLastWeightAverage;
-            weightedAverageAPR[principleIndex] =
-                newWeightedAPR +
-                updatedLastApr;
+            weightedAverageAPR[principleIndex] = (newWeightedAPR +
+                updatedLastApr);
 
             // mint ownership for the lender
             uint lendID = IOwnerships(s_OwnershipContract).mint(lendInfo.owner);
@@ -557,7 +564,8 @@ contract DebitaV3Aggregator is ReentrancyGuard {
                 feeToConnector
             );
             // check if the apr is within the limits of the borrower
-            require(weightedAverageAPR[i] <= borrowInfo.maxApr, "Invalid APR");
+            uint maxAPR = borrowInfo.maxApr + lendOrders.length;
+            require(weightedAverageAPR[i] <= maxAPR, "Invalid APR");
         }
         // if collateral is an NFT, check if the amount of collateral is within the limits
         // it has a 2% margin to make easier the matching, amountOfCollateral is the amount of collateral "consumed" and the valuableAssetAmount is the underlying amount of the NFT

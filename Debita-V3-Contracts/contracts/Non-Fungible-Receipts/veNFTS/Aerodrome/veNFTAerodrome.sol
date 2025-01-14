@@ -11,6 +11,14 @@ interface IVotingEscrow {
         uint256 end;
         bool isPermanent;
     }
+
+    enum EscrowType {
+        NORMAL,
+        LOCKED,
+        MANAGED
+    }
+
+    function escrowType(uint id) external view returns (EscrowType);
 }
 
 interface veNFT is IVotingEscrow {

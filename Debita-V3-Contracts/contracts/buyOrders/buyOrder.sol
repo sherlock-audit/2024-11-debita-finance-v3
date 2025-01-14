@@ -29,7 +29,7 @@ interface IBuyOrderFactory {
     function sellFee() external view returns (uint);
     function feeAddress() external view returns (address);
 }
-contract BuyOrder is Initializable {
+contract BuyOrder is Initializable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     struct BuyInfo {
@@ -89,7 +89,7 @@ contract BuyOrder is Initializable {
         IBuyOrderFactory(buyOrderFactory).emitDelete(address(this));
     }
 
-    function sellNFT(uint receiptID) public {
+    function sellNFT(uint receiptID) public nonReentrant {
         require(buyInformation.isActive, "Buy order is not active");
         require(
             buyInformation.availableAmount > 0,
@@ -123,6 +123,12 @@ contract BuyOrder is Initializable {
             IERC20(buyInformation.buyToken),
             msg.sender,
             amount - feeAmount
+        );
+
+        IERC721(buyInformation.wantedToken).transferFrom(
+            address(this),
+            buyInformation.owner,
+            receiptID
         );
 
         SafeERC20.safeTransfer(
